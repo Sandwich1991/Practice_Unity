@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,11 +18,13 @@ public class CharacterSelect : BaseScene
     #region Fields
     private GameObject _genderSelectUI;
     private GameObject _customizingUI;
-    private GameObject[] _characters;
     private GameObject _myCharacter;
     private SkinnedMeshRenderer _hair;
     private SkinnedMeshRenderer _shirts;
     private SkinnedMeshRenderer _pants;
+    
+    private int _skinIndex = 0;
+    GameObject _skinColorText;
     #endregion
     
     #region UI Paths
@@ -34,7 +37,7 @@ public class CharacterSelect : BaseScene
     private string _turnRightOfGenderUIPath = "UI/GenderUI/Buttons/TurnRightButton";
     private string _buttonsOfGenderUIPath = "UI/GenderUI/Buttons";
     private string _textOfGenderUIPath = "UI/GenderUI/Text";
-    
+
     // CutominzingUI Path
     private string _custominzingUIPath = "UI/CustomizingUI";
     private string _buttonsOfCustomizingUIPath = "UI/CustomizingUI/Buttons";
@@ -43,17 +46,23 @@ public class CharacterSelect : BaseScene
     private string _turnLeftOfCustomizingUIPath = "UI/CustomizingUI/Buttons/TurnLeftButton";
     private string _turnRightOfCustomizingUIPath = "UI/CustomizingUI/Buttons/TurnRightButton";
     private string _textsOfCutomizingUIPath = "UI/CustomizingUI/Texts";
-    private string _pantsOfCutomizingUIPath = "UI/CustomizingUI/Pants";
-    private string _shirtsOfCutomizingUIPath = "UI/CustomizingUI/Shirts";
-    private string _skinOfCutomizingUIPath = "UI/CustomizingUI/Skin";
-    private string _hairOfCustomizingUIPath = "UI/CustomizingUI/Hair";
+    private string _pantsTextOfCutomizingUIPath = "UI/CustomizingUI/PantsText";
+    private string _shirtsTextOfCutomizingUIPath = "UI/CustomizingUI/ShirtsText";
+    private string _skinTextOfCutomizingUIPath = "UI/CustomizingUI/SkinText";
+    private string _hairTextOfCustomizingUIPath = "UI/CustomizingUI/HairText";
+    private string _nextSkinButtonPath = "UI/CustomizingUI/Buttons/NextSkin";
+    private string _prevSkinButtonPath = "UI/CustomizingUI/Buttons/PrevSkin";
+    private string _skinColorTextPath = "UI/CustomizingUI/SkinColorText";
     #endregion
 
     #region Character Path
     // prefab Path
-    private string basePref = "Character/Base";
-    private string _femalePref = "Character/Female";
-    private string _malePref = "Character/male";
+    private string _femalePrefabPath = "Character/Female";
+    private string _malePrefabPath = "Character/male";
+    #endregion
+
+    #region Material
+    private List<Material> _skins;
     #endregion
     /************************************************************************/
     /************************************************************************/
@@ -62,13 +71,11 @@ public class CharacterSelect : BaseScene
     {
         base.init();
 
-        GenerateGenderUI();
-        _myCharacter = GenerateCharacter();
+        GenerateGenderUI(); // 성별 선택 UI 생성
+        _myCharacter = GenerateCharacter(_malePrefabPath); // 초기 캐릭터 생성(기본 남자)
         _gender = Gender.Male;
-        Transform child = _myCharacter.transform.GetChild(0);
-        _hair = child.GetChild(1).GetComponent<SkinnedMeshRenderer>();
-        _shirts = child.GetChild(2).GetComponent<SkinnedMeshRenderer>();
-        _pants = child.GetChild(3).GetComponent<SkinnedMeshRenderer>();
+        GetMeshRenderers(); // 캐릭터의 메쉬 렌더러 불러오기
+        _skins = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Skin/"); // 스킨 메테리얼 불러오기
     }
     public override void Clear()
     {
@@ -77,6 +84,8 @@ public class CharacterSelect : BaseScene
     /************************************************************************/
     /************************************************************************/
     // Methods
+    
+    // 성별 선택 UI 불러오기
     void GenerateGenderUI()
     {
         _genderSelectUI = Managers.Resource.Instantiate(_genderUIPath);
@@ -94,16 +103,19 @@ public class CharacterSelect : BaseScene
         turnLeftButton.onClick.AddListener(TurnLeft);
         turnRightButton.onClick.AddListener(TurnRight);
         nextButton.onClick.AddListener(NextToCustomizingUI);
-    }
+    } 
+    
+    // 캐릭터 파츠 선택 UI 불러오기
     void GenerateCustomizingUI()
     {
         _customizingUI = Managers.Resource.Instantiate(_custominzingUIPath);
         GameObject texts = Managers.Resource.Instantiate(_textsOfCutomizingUIPath, _customizingUI.transform);
 
-        GameObject skinText = Managers.Resource.Instantiate(_skinOfCutomizingUIPath, texts.transform);
-        GameObject shirtText = Managers.Resource.Instantiate(_shirtsOfCutomizingUIPath, texts.transform);
-        GameObject pantsText = Managers.Resource.Instantiate(_pantsOfCutomizingUIPath, texts.transform);
-        GameObject hairText = Managers.Resource.Instantiate(_hairOfCustomizingUIPath, texts.transform);
+        GameObject skinText = Managers.Resource.Instantiate(_skinTextOfCutomizingUIPath, texts.transform);
+        GameObject shirtText = Managers.Resource.Instantiate(_shirtsTextOfCutomizingUIPath, texts.transform);
+        GameObject pantsText = Managers.Resource.Instantiate(_pantsTextOfCutomizingUIPath, texts.transform);
+        GameObject hairText = Managers.Resource.Instantiate(_hairTextOfCustomizingUIPath, texts.transform);
+        _skinColorText = Managers.Resource.Instantiate(_skinColorTextPath, texts.transform);
         
         GameObject buttons = Managers.Resource.Instantiate(_buttonsOfCustomizingUIPath, _customizingUI.transform);
         
@@ -111,49 +123,63 @@ public class CharacterSelect : BaseScene
         Button prevButton = Managers.Resource.Instantiate(_prevOfOfCustomizingUIPath, buttons.transform).GetComponent<Button>();
         Button turnLeftButton = Managers.Resource.Instantiate(_turnLeftOfCustomizingUIPath, buttons.transform).GetComponent<Button>();
         Button turnRightButton = Managers.Resource.Instantiate(_turnRightOfCustomizingUIPath, buttons.transform).GetComponent<Button>();
+        Button nextSkinButton = Managers.Resource.Instantiate(_nextSkinButtonPath, buttons.transform).GetComponent<Button>();
+        Button prevSkinButton = Managers.Resource.Instantiate(_prevSkinButtonPath, buttons.transform).GetComponent<Button>();
         
         nextButton.onClick.AddListener(NextToStart);
         prevButton.onClick.AddListener(PrevToGenderUI);
         turnLeftButton.onClick.AddListener(TurnLeft);
         turnRightButton.onClick.AddListener(TurnRight);
-    }
-    GameObject GenerateCharacter()
+        nextSkinButton.onClick.AddListener(NextSkinColor);
+        prevSkinButton.onClick.AddListener(PrevSkinColor);
+    } 
+    
+    // 캐릭터 모델 불러오기(남자 아바타가 기본)
+    GameObject GenerateCharacter(string gender)
     {
-        GameObject go = Managers.Resource.Instantiate(basePref);
-        GameObject male = Managers.Resource.Instantiate(_malePref, go.transform);
+        GameObject go = Managers.Resource.Instantiate(gender);
         go.name = "MyChar";
         go.transform.position = new Vector3(0, 0, 1);
-        go.transform.rotation = Quaternion.Euler(0, 0, 0);
+        go.transform.rotation = Quaternion.Euler(0, 180, 0);
         return go;
-    }
+    } 
+    
+    // 캐릭터의 스킨메쉬 렌더러 불러오기
     void GetMeshRenderers()
     {
-        Transform child = _myCharacter.transform.GetChild(0);
-        _hair = child.GetChild(1).GetComponent<SkinnedMeshRenderer>();
-        _shirts = child.GetChild(2).GetComponent<SkinnedMeshRenderer>();
-        _pants = child.GetChild(3).GetComponent<SkinnedMeshRenderer>();
-    }
-    void ChangeSkin(Material newColor)
+        _hair = _myCharacter.transform.GetChild(1).GetComponent<SkinnedMeshRenderer>();
+        _shirts = _myCharacter.transform.GetChild(2).GetComponent<SkinnedMeshRenderer>();
+        _pants = _myCharacter.transform.GetChild(3).GetComponent<SkinnedMeshRenderer>();
+    } 
+    
+    // 스킨 메테리얼 불러오기
+    void GetSkinMaterial()
+    {
+        
+    } 
+    
+    // 피부 색 바꾸기
+    void ChangeSkin(int idx) 
     {
         switch (_gender)
         {
             case Gender.Male:
                 GetMeshRenderers();
                 Material curMaleHairColor = _hair.materials[1];
-                _hair.materials = new Material[] { newColor, curMaleHairColor };
+                _hair.materials = new Material[] { _skins[idx], curMaleHairColor };
                 Material curMaleShitsColor = _shirts.materials[1];
-                _shirts.materials = new Material[] { newColor, curMaleShitsColor };
+                _shirts.materials = new Material[] { _skins[idx], curMaleShitsColor };
                 break;
             
             case Gender.Female:
                 GetMeshRenderers();
                 Material curFemaleHairColor = _hair.materials[1];
-                _hair.materials = new Material[] { newColor, curFemaleHairColor };
+                _hair.materials = new Material[] { _skins[idx], curFemaleHairColor };
                 Material curFemaleShitsColor = _shirts.materials[0];
-                _shirts.materials = new Material[] { curFemaleShitsColor, newColor };
+                _shirts.materials = new Material[] { curFemaleShitsColor, _skins[idx] };
                 Material curFemalePantsColor1 = _pants.materials[0];
                 Material curFemalePantsColor2 = _pants.materials[2];
-                _pants.materials = new Material[] { curFemalePantsColor1, newColor, curFemalePantsColor2 };
+                _pants.materials = new Material[] { curFemalePantsColor1, _skins[idx], curFemalePantsColor2 };
                 break;
         }
     }
@@ -164,16 +190,16 @@ public class CharacterSelect : BaseScene
     {
         if (_myCharacter == null)
             return;
-        Managers.Resource.Destroy(_myCharacter.transform.GetChild(0).gameObject);
-        GameObject male = Managers.Resource.Instantiate(_malePref, _myCharacter.transform);
+        Managers.Resource.Destroy(_myCharacter);
+        _myCharacter = GenerateCharacter(_malePrefabPath);
         _gender = Gender.Male;
     }
     void ChangeToFemale()
     {
         if (_myCharacter == null)
             return;
-        Managers.Resource.Destroy(_myCharacter.transform.GetChild(0).gameObject);
-        GameObject female = Managers.Resource.Instantiate(_femalePref, _myCharacter.transform);
+        Managers.Resource.Destroy(_myCharacter);
+        _myCharacter = GenerateCharacter(_femalePrefabPath);
         _gender = Gender.Female;
     }
     void TurnLeft()
@@ -200,10 +226,20 @@ public class CharacterSelect : BaseScene
     {
         print("Game Start!");
     }
-
-    public void ChangeToDark()
+    void NextSkinColor()
     {
-        Material dark = Managers.Resource.Load<Material>("Art/Characters/Materials/Skin/dark");
-        ChangeSkin(dark);
+        _skinIndex++;
+        if (_skinIndex > _skins.Count - 1)
+            _skinIndex = 0;
+        ChangeSkin(_skinIndex);
+        _skinColorText.GetComponent<Text>().text = _skins[_skinIndex].name;
+    }
+    void PrevSkinColor()
+    {
+        _skinIndex--;
+        if (_skinIndex < 0)
+            _skinIndex = _skins.Count - 1;
+        ChangeSkin(_skinIndex);
+        _skinColorText.GetComponent<Text>().text = _skins[_skinIndex].name;
     }
 }
