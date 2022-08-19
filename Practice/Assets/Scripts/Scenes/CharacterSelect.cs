@@ -16,15 +16,25 @@ public class CharacterSelect : BaseScene
     /************************************************************************/
     /************************************************************************/
     #region Fields
+    // UI / Character
     private GameObject _genderSelectUI;
     private GameObject _customizingUI;
     private GameObject _myCharacter;
+    
+    // mesh renderer
     private SkinnedMeshRenderer _hair;
     private SkinnedMeshRenderer _shirts;
     private SkinnedMeshRenderer _pants;
     
+    // skin color
     private int _skinIndex = 0;
     GameObject _skinColorText;
+    private List<Material> _skinColors;
+    
+    // hair color
+    private int _hairIndex = 0;
+    private GameObject _hairColorText;
+    private List<Material> _hairColors;
     #endregion
     
     #region UI Paths
@@ -53,16 +63,15 @@ public class CharacterSelect : BaseScene
     private string _nextSkinButtonPath = "UI/CustomizingUI/Buttons/NextSkin";
     private string _prevSkinButtonPath = "UI/CustomizingUI/Buttons/PrevSkin";
     private string _skinColorTextPath = "UI/CustomizingUI/SkinColorText";
+    private string _nextHairButtonPath = "UI/CustomizingUI/Buttons/NextHairColor";
+    private string _prevHairButtonPath = "UI/CustomizingUI/Buttons/PrevHairColor";
+    private string _hairColorTextPath = "UI/CustomizingUI/HairColorText";
     #endregion
 
     #region Character Path
     // prefab Path
     private string _femalePrefabPath = "Character/Female";
     private string _malePrefabPath = "Character/male";
-    #endregion
-
-    #region Material
-    private List<Material> _skins;
     #endregion
     /************************************************************************/
     /************************************************************************/
@@ -75,7 +84,8 @@ public class CharacterSelect : BaseScene
         _myCharacter = GenerateCharacter(_malePrefabPath); // 초기 캐릭터 생성(기본 남자)
         _gender = Gender.Male;
         GetMeshRenderers(); // 캐릭터의 메쉬 렌더러 불러오기
-        _skins = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Skin/"); // 스킨 메테리얼 불러오기
+        _skinColors = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Skin/"); // 스킨 메테리얼 리스트로 불러오기
+        _hairColors = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Hair/"); // 머리색 메테리얼 리스트로 불러오기
     }
     public override void Clear()
     {
@@ -116,6 +126,7 @@ public class CharacterSelect : BaseScene
         GameObject pantsText = Managers.Resource.Instantiate(_pantsTextOfCutomizingUIPath, texts.transform);
         GameObject hairText = Managers.Resource.Instantiate(_hairTextOfCustomizingUIPath, texts.transform);
         _skinColorText = Managers.Resource.Instantiate(_skinColorTextPath, texts.transform);
+        _hairColorText = Managers.Resource.Instantiate(_hairColorTextPath, texts.transform);
         
         GameObject buttons = Managers.Resource.Instantiate(_buttonsOfCustomizingUIPath, _customizingUI.transform);
         
@@ -125,6 +136,8 @@ public class CharacterSelect : BaseScene
         Button turnRightButton = Managers.Resource.Instantiate(_turnRightOfCustomizingUIPath, buttons.transform).GetComponent<Button>();
         Button nextSkinButton = Managers.Resource.Instantiate(_nextSkinButtonPath, buttons.transform).GetComponent<Button>();
         Button prevSkinButton = Managers.Resource.Instantiate(_prevSkinButtonPath, buttons.transform).GetComponent<Button>();
+        Button nextHairColorButton = Managers.Resource.Instantiate(_nextHairButtonPath, buttons.transform).GetComponent<Button>();
+        Button prevHairColorButton = Managers.Resource.Instantiate(_prevHairButtonPath, buttons.transform).GetComponent<Button>();
         
         nextButton.onClick.AddListener(NextToStart);
         prevButton.onClick.AddListener(PrevToGenderUI);
@@ -132,6 +145,8 @@ public class CharacterSelect : BaseScene
         turnRightButton.onClick.AddListener(TurnRight);
         nextSkinButton.onClick.AddListener(NextSkinColor);
         prevSkinButton.onClick.AddListener(PrevSkinColor);
+        nextHairColorButton.onClick.AddListener(NextHairColor);
+        prevHairColorButton.onClick.AddListener(PrevHairColor);
     } 
     
     // 캐릭터 모델 불러오기(남자 아바타가 기본)
@@ -150,43 +165,45 @@ public class CharacterSelect : BaseScene
         _hair = _myCharacter.transform.GetChild(1).GetComponent<SkinnedMeshRenderer>();
         _shirts = _myCharacter.transform.GetChild(2).GetComponent<SkinnedMeshRenderer>();
         _pants = _myCharacter.transform.GetChild(3).GetComponent<SkinnedMeshRenderer>();
-    } 
-    
-    // 스킨 메테리얼 불러오기
-    void GetSkinMaterial()
-    {
-        
-    } 
-    
+    }
+
     // 피부 색 바꾸기
-    void ChangeSkin(int idx) 
+    void ChangeSkinColor(int idx) 
     {
         switch (_gender)
         {
             case Gender.Male:
                 GetMeshRenderers();
                 Material curMaleHairColor = _hair.materials[1];
-                _hair.materials = new Material[] { _skins[idx], curMaleHairColor };
+                _hair.materials = new Material[] { _skinColors[idx], curMaleHairColor };
                 Material curMaleShitsColor = _shirts.materials[1];
-                _shirts.materials = new Material[] { _skins[idx], curMaleShitsColor };
+                _shirts.materials = new Material[] { _skinColors[idx], curMaleShitsColor };
                 break;
             
             case Gender.Female:
                 GetMeshRenderers();
                 Material curFemaleHairColor = _hair.materials[1];
-                _hair.materials = new Material[] { _skins[idx], curFemaleHairColor };
+                _hair.materials = new Material[] { _skinColors[idx], curFemaleHairColor };
                 Material curFemaleShitsColor = _shirts.materials[0];
-                _shirts.materials = new Material[] { curFemaleShitsColor, _skins[idx] };
+                _shirts.materials = new Material[] { curFemaleShitsColor, _skinColors[idx] };
                 Material curFemalePantsColor1 = _pants.materials[0];
                 Material curFemalePantsColor2 = _pants.materials[2];
-                _pants.materials = new Material[] { curFemalePantsColor1, _skins[idx], curFemalePantsColor2 };
+                _pants.materials = new Material[] { curFemalePantsColor1, _skinColors[idx], curFemalePantsColor2 };
                 break;
         }
+    }
+    
+    // 머리 색 바꾸기
+    void ChangeHairColor(int idx)
+    {
+        GetMeshRenderers();
+        Material curSkinColor = _hair.materials[0];
+        _hair.materials = new Material[] { curSkinColor, _hairColors[idx] };
     }
     /************************************************************************/
     /************************************************************************/
     // ButtonEvent
-    void ChangeToMale()
+    void ChangeToMale() // 성별 남자로 바꾸기
     {
         if (_myCharacter == null)
             return;
@@ -194,7 +211,7 @@ public class CharacterSelect : BaseScene
         _myCharacter = GenerateCharacter(_malePrefabPath);
         _gender = Gender.Male;
     }
-    void ChangeToFemale()
+    void ChangeToFemale() // 성별 여자로 바꾸기
     {
         if (_myCharacter == null)
             return;
@@ -202,44 +219,60 @@ public class CharacterSelect : BaseScene
         _myCharacter = GenerateCharacter(_femalePrefabPath);
         _gender = Gender.Female;
     }
-    void TurnLeft()
+    void TurnLeft() // 캐릭터 왼쪽으로 회전
     {
         float toLeft = 45;
         _myCharacter.transform.Rotate(Vector3.up * toLeft);
     }
-    void TurnRight()
+    void TurnRight() // 캐릭터 오른쪽으로 회전
     {
         float toRight = 45;
         _myCharacter.transform.Rotate(- Vector3.up * toRight);
     }
-    void NextToCustomizingUI()
+    void NextToCustomizingUI() // 파츠 선택 화면으로 넘어가기
     {
         Managers.Resource.Destroy(_genderSelectUI);
         GenerateCustomizingUI();
     }
-    void PrevToGenderUI()
+    void PrevToGenderUI() // 성별 선택 화면으로 돌아가기
     {
         Managers.Resource.Destroy(_customizingUI);
         GenerateGenderUI();
     }
-    void NextToStart()
+    void NextToStart() // 게임 시작하기(미구현)
     {
         print("Game Start!");
     }
-    void NextSkinColor()
+    void NextSkinColor() // 다음 피부색으로 바꾸기
     {
         _skinIndex++;
-        if (_skinIndex > _skins.Count - 1)
+        if (_skinIndex > _skinColors.Count - 1)
             _skinIndex = 0;
-        ChangeSkin(_skinIndex);
-        _skinColorText.GetComponent<Text>().text = _skins[_skinIndex].name;
+        ChangeSkinColor(_skinIndex);
+        _skinColorText.GetComponent<Text>().text = _skinColors[_skinIndex].name;
     }
-    void PrevSkinColor()
+    void PrevSkinColor() // 이전 피부색으로 바꾸기
     {
         _skinIndex--;
         if (_skinIndex < 0)
-            _skinIndex = _skins.Count - 1;
-        ChangeSkin(_skinIndex);
-        _skinColorText.GetComponent<Text>().text = _skins[_skinIndex].name;
+            _skinIndex = _skinColors.Count - 1;
+        ChangeSkinColor(_skinIndex);
+        _skinColorText.GetComponent<Text>().text = _skinColors[_skinIndex].name;
+    }
+    void NextHairColor() // 다음 머리색으로 바꾸기
+    {
+        _hairIndex++;
+        if (_hairIndex > _hairColors.Count - 1)
+            _hairIndex = 0;
+        ChangeHairColor(_hairIndex);
+        _hairColorText.GetComponent<Text>().text = _hairColors[_hairIndex].name;
+    }
+    void PrevHairColor() // 이전 머리색으로 바꾸기
+    {
+        _hairIndex--;
+        if (_hairIndex < 0)
+            _hairIndex = _hairColors.Count - 1;
+        ChangeHairColor(_hairIndex);
+        _hairColorText.GetComponent<Text>().text = _hairColors[_hairIndex].name;
     }
 }
