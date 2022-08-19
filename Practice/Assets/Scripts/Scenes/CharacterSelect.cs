@@ -50,12 +50,14 @@ public class CharacterSelect : BaseScene
     #endregion
 
     #region Character Path
+    // prefab Path
     private string basePref = "Character/Base";
     private string _femalePref = "Character/Female";
     private string _malePref = "Character/male";
     #endregion
     /************************************************************************/
     /************************************************************************/
+    // Scene
     protected override void init()
     {
         base.init();
@@ -74,6 +76,7 @@ public class CharacterSelect : BaseScene
     }
     /************************************************************************/
     /************************************************************************/
+    // Methods
     void GenerateGenderUI()
     {
         _genderSelectUI = Managers.Resource.Instantiate(_genderUIPath);
@@ -97,10 +100,10 @@ public class CharacterSelect : BaseScene
         _customizingUI = Managers.Resource.Instantiate(_custominzingUIPath);
         GameObject texts = Managers.Resource.Instantiate(_textsOfCutomizingUIPath, _customizingUI.transform);
 
-        GameObject skin = Managers.Resource.Instantiate(_skinOfCutomizingUIPath, texts.transform);
-        GameObject shirt = Managers.Resource.Instantiate(_shirtsOfCutomizingUIPath, texts.transform);
-        GameObject pants = Managers.Resource.Instantiate(_pantsOfCutomizingUIPath, texts.transform);
-        GameObject hair = Managers.Resource.Instantiate(_hairOfCustomizingUIPath, texts.transform);
+        GameObject skinText = Managers.Resource.Instantiate(_skinOfCutomizingUIPath, texts.transform);
+        GameObject shirtText = Managers.Resource.Instantiate(_shirtsOfCutomizingUIPath, texts.transform);
+        GameObject pantsText = Managers.Resource.Instantiate(_pantsOfCutomizingUIPath, texts.transform);
+        GameObject hairText = Managers.Resource.Instantiate(_hairOfCustomizingUIPath, texts.transform);
         
         GameObject buttons = Managers.Resource.Instantiate(_buttonsOfCustomizingUIPath, _customizingUI.transform);
         
@@ -123,7 +126,7 @@ public class CharacterSelect : BaseScene
         go.transform.rotation = Quaternion.Euler(0, 0, 0);
         return go;
     }
-    void GetMeshRenderer()
+    void GetMeshRenderers()
     {
         Transform child = _myCharacter.transform.GetChild(0);
         _hair = child.GetChild(1).GetComponent<SkinnedMeshRenderer>();
@@ -135,7 +138,7 @@ public class CharacterSelect : BaseScene
         switch (_gender)
         {
             case Gender.Male:
-                GetMeshRenderer();
+                GetMeshRenderers();
                 Material curMaleHairColor = _hair.materials[1];
                 _hair.materials = new Material[] { newColor, curMaleHairColor };
                 Material curMaleShitsColor = _shirts.materials[1];
@@ -143,7 +146,7 @@ public class CharacterSelect : BaseScene
                 break;
             
             case Gender.Female:
-                GetMeshRenderer();
+                GetMeshRenderers();
                 Material curFemaleHairColor = _hair.materials[1];
                 _hair.materials = new Material[] { newColor, curFemaleHairColor };
                 Material curFemaleShitsColor = _shirts.materials[0];
@@ -152,7 +155,6 @@ public class CharacterSelect : BaseScene
                 Material curFemalePantsColor2 = _pants.materials[2];
                 _pants.materials = new Material[] { curFemalePantsColor1, newColor, curFemalePantsColor2 };
                 break;
-                
         }
     }
     /************************************************************************/
