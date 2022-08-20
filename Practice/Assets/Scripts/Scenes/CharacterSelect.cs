@@ -11,6 +11,14 @@ public class CharacterSelect : BaseScene
         Female
     }
 
+    enum Colors
+    {
+        Skin,
+        Hair,
+        Shirts,
+        Pants,
+    }
+
     private Gender _gender;
 
     /************************************************************************/
@@ -37,6 +45,13 @@ public class CharacterSelect : BaseScene
     private List<Material> _hairColors;
     #endregion
     
+    // clothe color
+    private int _shirtsIndex = 0;
+    private int _pantsIndex = 0;
+    private GameObject _shirtsColorText;
+    private GameObject _pantsColorText;
+    private List<Material> _fabricColors;
+
     #region UI Paths
     // GenderUI Path
     private string _genderUIPath = "UI/GenderUI/GenderUI";
@@ -66,6 +81,12 @@ public class CharacterSelect : BaseScene
     private string _nextHairButtonPath = "UI/CustomizingUI/Buttons/NextHairColor";
     private string _prevHairButtonPath = "UI/CustomizingUI/Buttons/PrevHairColor";
     private string _hairColorTextPath = "UI/CustomizingUI/HairColorText";
+    private string _nextShirtsButtonPath = "UI/CustomizingUI/Buttons/NextShirtsColor";
+    private string _nextPantsButtonPath = "UI/CustomizingUI/Buttons/NextPantsColor";
+    private string _prevShirtsButtonPath = "UI/CustomizingUI/Buttons/PrevShirtsColor";
+    private string _prevPantsButtonPath = "UI/CustomizingUI/Buttons/PrevPantsColor";
+    string _shirtsColorTextPath = "UI/CustomizingUI/ShirtsColorText";
+    string _pantsColorTextPath = "UI/CustomizingUI/PantsColorText";
     #endregion
 
     #region Character Path
@@ -86,6 +107,7 @@ public class CharacterSelect : BaseScene
         GetMeshRenderers(); // 캐릭터의 메쉬 렌더러 불러오기
         _skinColors = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Skin/"); // 스킨 메테리얼 리스트로 불러오기
         _hairColors = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Hair/"); // 머리색 메테리얼 리스트로 불러오기
+        _fabricColors = Utills.GetFileListInDir<Material>("Art/Characters/Materials/Fabric/"); // 옷 색 메테리얼 리스트 불러오기
     }
     public override void Clear()
     {
@@ -125,8 +147,18 @@ public class CharacterSelect : BaseScene
         GameObject shirtText = Managers.Resource.Instantiate(_shirtsTextOfCutomizingUIPath, texts.transform);
         GameObject pantsText = Managers.Resource.Instantiate(_pantsTextOfCutomizingUIPath, texts.transform);
         GameObject hairText = Managers.Resource.Instantiate(_hairTextOfCustomizingUIPath, texts.transform);
+        
         _skinColorText = Managers.Resource.Instantiate(_skinColorTextPath, texts.transform);
+        _skinColorText.GetComponent<Text>().text = GetMaterialName(Colors.Skin);
+        
         _hairColorText = Managers.Resource.Instantiate(_hairColorTextPath, texts.transform);
+        _hairColorText.GetComponent<Text>().text = GetMaterialName(Colors.Hair);
+        
+        _shirtsColorText = Managers.Resource.Instantiate(_shirtsColorTextPath, texts.transform);
+        _shirtsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Shirts);
+        
+        _pantsColorText = Managers.Resource.Instantiate(_pantsColorTextPath, texts.transform);
+        _pantsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Pants);
         
         GameObject buttons = Managers.Resource.Instantiate(_buttonsOfCustomizingUIPath, _customizingUI.transform);
         
@@ -138,6 +170,11 @@ public class CharacterSelect : BaseScene
         Button prevSkinButton = Managers.Resource.Instantiate(_prevSkinButtonPath, buttons.transform).GetComponent<Button>();
         Button nextHairColorButton = Managers.Resource.Instantiate(_nextHairButtonPath, buttons.transform).GetComponent<Button>();
         Button prevHairColorButton = Managers.Resource.Instantiate(_prevHairButtonPath, buttons.transform).GetComponent<Button>();
+        Button nextShirtsColorButton = Managers.Resource.Instantiate(_nextShirtsButtonPath, buttons.transform).GetComponent<Button>();
+        Button prevShirtsColorButton = Managers.Resource.Instantiate(_prevShirtsButtonPath, buttons.transform).GetComponent<Button>();
+        Button nextPantsColorButton = Managers.Resource.Instantiate(_nextPantsButtonPath, buttons.transform).GetComponent<Button>();
+        Button prevPantsColorButton = Managers.Resource.Instantiate(_prevPantsButtonPath, buttons.transform).GetComponent<Button>();
+        
         
         nextButton.onClick.AddListener(NextToStart);
         prevButton.onClick.AddListener(PrevToGenderUI);
@@ -147,6 +184,10 @@ public class CharacterSelect : BaseScene
         prevSkinButton.onClick.AddListener(PrevSkinColor);
         nextHairColorButton.onClick.AddListener(NextHairColor);
         prevHairColorButton.onClick.AddListener(PrevHairColor);
+        nextShirtsColorButton.onClick.AddListener(NextShirtsColor);
+        prevShirtsColorButton.onClick.AddListener(PrevShirtsColor);
+        nextPantsColorButton.onClick.AddListener(NextPantsColor);
+        prevPantsColorButton.onClick.AddListener(PrevPantsColor);
     } 
     
     // 캐릭터 모델 불러오기(남자 아바타가 기본)
@@ -200,6 +241,83 @@ public class CharacterSelect : BaseScene
         Material curSkinColor = _hair.materials[0];
         _hair.materials = new Material[] { curSkinColor, _hairColors[idx] };
     }
+    
+    // 상의 색 바꾸기
+    void ChangeShritsColor(int idx)
+    {
+        switch (_gender)
+        {
+            case Gender.Female:
+                GetMeshRenderers();
+                Material curFemaleSkinColor = _shirts.materials[1];
+                _shirts.materials = new Material[] { _fabricColors[idx], curFemaleSkinColor };
+                break;
+            case Gender.Male:
+                GetMeshRenderers();
+                Material curMaleSkinColor = _shirts.materials[0];
+                _shirts.materials = new Material[] { curMaleSkinColor, _fabricColors[idx] };
+                break;
+        }
+    }
+    
+    // 하의 색 바꾸기
+    void ChangePantsColor(int idx)
+    {
+        switch (_gender)
+        {
+            case Gender.Female:
+                GetMeshRenderers();
+                Material curFemaleSkinColor = _pants.materials[1];
+                Material curFabricColor = _pants.materials[2];
+                _pants.materials = new Material[] { _fabricColors[idx], curFemaleSkinColor, curFabricColor };
+                break;
+            case Gender.Male:
+                GetMeshRenderers();
+                Material curBootsSkinColor = _shirts.materials[1];
+                _pants.materials = new Material[] { _fabricColors[idx], curBootsSkinColor };
+                break;
+        }
+    }
+
+    string GetMaterialName(Colors color)
+    {
+        GetMeshRenderers();
+        string colorName = null;
+        
+        switch (color)
+        {
+            case Colors.Skin:
+                colorName = _hair.materials[0].name;
+                break;
+            
+            case Colors.Hair:
+                colorName = _hair.materials[1].name;
+                break;
+            
+            case Colors.Shirts:
+                switch (_gender)
+                {
+                    case Gender.Male:
+                        colorName = _shirts.materials[1].name;
+                        break;
+                    case Gender.Female:
+                        colorName = _shirts.materials[0].name;
+                        break;
+                }
+                break;
+            
+            case Colors.Pants:
+                colorName = _pants.materials[0].name;
+                break;
+        }
+
+        if (colorName.Contains("(Instance)"))
+        {
+            int idx = colorName.LastIndexOf(" ");
+            colorName = colorName.Substring(0, idx);
+        }
+        return colorName;
+    }
     /************************************************************************/
     /************************************************************************/
     // ButtonEvent
@@ -249,7 +367,7 @@ public class CharacterSelect : BaseScene
         if (_skinIndex > _skinColors.Count - 1)
             _skinIndex = 0;
         ChangeSkinColor(_skinIndex);
-        _skinColorText.GetComponent<Text>().text = _skinColors[_skinIndex].name;
+        _skinColorText.GetComponent<Text>().text = GetMaterialName(Colors.Skin);
     }
     void PrevSkinColor() // 이전 피부색으로 바꾸기
     {
@@ -257,7 +375,7 @@ public class CharacterSelect : BaseScene
         if (_skinIndex < 0)
             _skinIndex = _skinColors.Count - 1;
         ChangeSkinColor(_skinIndex);
-        _skinColorText.GetComponent<Text>().text = _skinColors[_skinIndex].name;
+        _skinColorText.GetComponent<Text>().text = GetMaterialName(Colors.Skin);
     }
     void NextHairColor() // 다음 머리색으로 바꾸기
     {
@@ -265,7 +383,7 @@ public class CharacterSelect : BaseScene
         if (_hairIndex > _hairColors.Count - 1)
             _hairIndex = 0;
         ChangeHairColor(_hairIndex);
-        _hairColorText.GetComponent<Text>().text = _hairColors[_hairIndex].name;
+        _hairColorText.GetComponent<Text>().text = GetMaterialName(Colors.Hair);
     }
     void PrevHairColor() // 이전 머리색으로 바꾸기
     {
@@ -273,6 +391,38 @@ public class CharacterSelect : BaseScene
         if (_hairIndex < 0)
             _hairIndex = _hairColors.Count - 1;
         ChangeHairColor(_hairIndex);
-        _hairColorText.GetComponent<Text>().text = _hairColors[_hairIndex].name;
+        _hairColorText.GetComponent<Text>().text = GetMaterialName(Colors.Hair);
+    }
+    void NextShirtsColor() // 다음 상의색으로 바꾸기
+    {
+        _shirtsIndex++;
+        if (_shirtsIndex > _fabricColors.Count - 1)
+            _shirtsIndex = 0;
+        ChangeShritsColor(_shirtsIndex);
+        _shirtsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Shirts);
+    }
+    void PrevShirtsColor() // 이전 상의색으로 바꾸기
+    {
+        _shirtsIndex--;
+        if (_shirtsIndex < 0)
+            _shirtsIndex = _fabricColors.Count - 1;
+        ChangeHairColor(_shirtsIndex);
+        _shirtsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Shirts);
+    }
+    void NextPantsColor() // 다음 하의색으로 바꾸기
+    {
+        _pantsIndex++;
+        if (_pantsIndex > _fabricColors.Count - 1)
+            _pantsIndex = 0;
+        ChangePantsColor(_pantsIndex);
+        _pantsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Pants);
+    }
+    void PrevPantsColor() // 이전 하의색으로 바꾸기
+    {
+        _pantsIndex--;
+        if (_pantsIndex < 0)
+            _pantsIndex = _fabricColors.Count - 1;
+        ChangePantsColor(_pantsIndex);
+        _pantsColorText.GetComponent<Text>().text = GetMaterialName(Colors.Pants);
     }
 }
