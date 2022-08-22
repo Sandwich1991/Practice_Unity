@@ -9,6 +9,7 @@ public abstract class BaseScene : MonoBehaviour
 
     protected virtual void init()
     {
+        Screen.SetResolution(1080, 1929, true);
         Object obj = GameObject.FindObjectOfType(typeof(EventSystem));
         if (obj == null)
             Managers.Resource.Instantiate("UI/EventSystem").name = "@EventSystem";

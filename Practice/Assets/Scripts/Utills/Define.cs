@@ -17,5 +17,6 @@ public class Define
     {
         Unknown,
         CharacterSelect,
+        Game,
     }
 }

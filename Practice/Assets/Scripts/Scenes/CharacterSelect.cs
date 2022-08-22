@@ -37,7 +37,7 @@ public class CharacterSelect : BaseScene
     private GameObject _customizingUI;
     private GameObject _enterNameUI;
     private GameObject _inputName;
-    private GameObject _myCharacter;
+    private  GameObject _myCharacter;
     private Gender _gender;
     private UI _ui = UI.GenderUI;
     
@@ -382,6 +382,12 @@ public class CharacterSelect : BaseScene
         }
         return colorName;
     }
+
+    void ReturnMyCharacter()
+    {
+        Managers.MyCharacter = _myCharacter;
+        DontDestroyOnLoad(Managers.MyCharacter);
+    }
     /************************************************************************/
     /************************************************************************/
     // ButtonEvent
@@ -508,8 +514,10 @@ public class CharacterSelect : BaseScene
                 GenerateMainUI();
                 break;
             case UI.EnterNameUI:
+                ReturnMyCharacter();
                 Managers.Resource.Destroy(_enterNameUI);
-                print("Game Start!");
+                Managers.Scene.Clear();
+                Managers.Scene.LoadScene(Define.Scene.Game);
                 break;
         }
     }
